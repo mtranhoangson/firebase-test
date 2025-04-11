@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  phone         String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  certificates  UserCertificate[]
+  examAttempts  ExamAttempt[]
+}
+
+model Vendor {
+  id        String    @id @default(cuid())
+  name      String
+  logo      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  certificates Certificate[]
+}
+
+model Certificate {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  vendorId    String
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  questions   Question[]
+  userCertificates UserCertificate[]
+}
+
+model Question {
+  id            String    @id @default(cuid())
+  content       String
+  options       String[]
+  correctAnswer String
+  explanation   String?
+  certificateId String
+  certificate   Certificate @relation(fields: [certificateId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model UserCertificate {
+  id            String    @id @default(cuid())
+  userId        String
+  certificateId String
+  user          User      @relation(fields: [userId], references: [id])
+  certificate   Certificate @relation(fields: [certificateId], references: [id])
+  validUntil    DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, certificateId])
+}
+
+model ExamAttempt {
+  id            String    @id @default(cuid())
+  userId        String
+  certificateId String
+  user          User      @relation(fields: [userId], references: [id])
+  certificate   Certificate @relation(fields: [certificateId], references: [id])
+  score         Float
+  totalQuestions Int
+  correctAnswers Int
+  timeSpent     Int      // in seconds
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+} 
